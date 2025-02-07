@@ -25,14 +25,14 @@ Parameters:
     Description: The instance tenancy attribute for the VPC
 
   VpcTags:
-    Type: List
+    Type: List<String>
     Description: The tags to apply to the VPC
-    Default: []
+    Default: ""  
 
   InternetGatewayTags:
-    Type: List
+    Type: List<String>
     Description: The tags to apply to the Internet Gateway
-    Default: []
+    Default: ""  
 
 Resources:
   # Create the VPC
@@ -43,13 +43,17 @@ Resources:
       EnableDnsSupport: !Ref EnableDnsSupport
       EnableDnsHostnames: !Ref EnableDnsHostnames
       InstanceTenancy: !Ref InstanceTenancy
-      Tags: !Ref VpcTags
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-VPC"
 
   # Create an Internet Gateway (IGW)
   InternetGateway:
     Type: "AWS::EC2::InternetGateway"
     Properties:
-      Tags: !Ref InternetGatewayTags
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-IGW"
 
   # Attach the Internet Gateway to the VPC
   AttachInternetGateway:
@@ -64,11 +68,11 @@ Outputs:
     Description: The VPC Id
     Value: !Ref VPC
     Export:
-      Name: !Sub "${AWS::StackName}-VPCId"  
+      Name: !Sub "${AWS::StackName}-VPCId"
 
   # Output the Internet Gateway ID for reference in other stacks
   InternetGatewayId:
     Description: The Internet Gateway Id
     Value: !Ref InternetGateway
     Export:
-      Name: !Sub "${AWS::StackName}-InternetGatewayId" 
+      Name: !Sub "${AWS::StackName}-InternetGatewayId"
