@@ -1,0 +1,64 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  AWS_REGION: "ap-southeast-2"
+  AWS_SERVICE_CONNECTION: "Your-AWS-Service-Connection-Name"
+
+stages:
+  - stage: DeployInfrastructure
+    displayName: "Deploy AWS Infrastructure"
+    jobs:
+      - job: DeployAWSResources
+        displayName: "Deploy VPC, NACL, Route Table, and Subnet"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: AWSCloudFormationCreateOrUpdateStackSet@1
+            displayName: "Create VPC StackSet"
+            inputs:
+              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
+              regionName: "$(AWS_REGION)"
+              stackSetName: "VPCStackSet"
+              templateFile: "vpc.yaml"
+              capabilities: "CAPABILITY_NAMED_IAM"
+              parameters: |
+                VpcCidr=10.0.0.0/16
+
+          - task: AWSCloudFormationCreateOrUpdateStackSet@1
+            displayName: "Deploy NACL StackSet"
+            inputs:
+              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
+              regionName: "$(AWS_REGION)"
+              stackSetName: "NACLStackSet"
+              templateFile: "nacl.yaml"
+              capabilities: "CAPABILITY_NAMED_IAM"
+              parameters: |
+                VpcId=VPCStackSet.VPCId
+
+          - task: AWSCloudFormationCreateOrUpdateStackSet@1
+            displayName: "Deploy Route Table StackSet"
+            inputs:
+              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
+              regionName: "$(AWS_REGION)"
+              stackSetName: "RouteTableStackSet"
+              templateFile: "route-table.yaml"
+              capabilities: "CAPABILITY_NAMED_IAM"
+              parameters: |
+                VpcId=VPCStackSet.VPCId
+                InternetGatewayId=VPCStackSet.InternetGatewayId
+
+          - task: AWSCloudFormationCreateOrUpdateStackSet@1
+            displayName: "Deploy Subnet StackSet"
+            inputs:
+              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
+              regionName: "$(AWS_REGION)"
+              stackSetName: "SubnetStackSet"
+              templateFile: "subnet.yaml"
+              capabilities: "CAPABILITY_NAMED_IAM"
+              parameters: |
+                PublicSubnetCidr=10.0.1.0/24
+                PrivateSubnetCidr=10.0.2.0/24
+                AvailabilityZone=ap-southeast-2a
