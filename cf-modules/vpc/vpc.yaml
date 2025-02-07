@@ -5,7 +5,7 @@ Parameters:
   VpcCidr:
     Type: String
     Description: The CIDR block for the VPC
-    Default: "10.0.0.0/16"  # ✅ Set a default CIDR block to prevent errors
+    Default: "10.0.0.0/16"
 
   EnableDnsSupport:
     Type: String
@@ -40,7 +40,7 @@ Resources:
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
-      CidrBlock: !Ref VpcCidr  # ✅ Will now always have a valid value
+      CidrBlock: !Ref VpcCidr  
       EnableDnsSupport: !Ref EnableDnsSupport
       EnableDnsHostnames: !Ref EnableDnsHostnames
       InstanceTenancy: !Ref InstanceTenancy
@@ -69,11 +69,11 @@ Outputs:
     Description: The VPC Id
     Value: !Ref VPC
     Export:
-      Name: !Sub "${AWS::StackName}-VPCId"
+      Name: !Sub "${AWS::StackName}-VPCId"  # Export the VPCId for importing
 
   # Output the Internet Gateway ID for reference in other stacks
   InternetGatewayId:
     Description: The Internet Gateway Id
     Value: !Ref InternetGateway
     Export:
-      Name: !Sub "${AWS::StackName}-InternetGatewayId"
+      Name: !Sub "${AWS::StackName}-InternetGatewayId"  # Export the InternetGatewayId for importing

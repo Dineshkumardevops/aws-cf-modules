@@ -5,10 +5,12 @@ Parameters:
   VpcId:
     Type: String
     Description: The ID of the VPC where the Route Table will be created
+    Default: !ImportValue "VPCStack-VPCId"  # Replace <VpcStackName> with the actual stack name from vpc.yaml
 
   InternetGatewayId:
     Type: String
     Description: The ID of the Internet Gateway to associate with the Route Table
+    Default: !ImportValue "VPCStack-InternetGatewayId"  # Replace <VpcStackName> with the actual stack name from vpc.yaml
 
 Resources:
   # Create a Public Route Table
@@ -39,4 +41,4 @@ Resources:
       DestinationCidrBlock: "0.0.0.0/0"   
       GatewayId: !Ref InternetGatewayId   
     DependsOn: PublicRouteTable  
-    DeletionPolicy: Retain  
+    DeletionPolicy: Retain
