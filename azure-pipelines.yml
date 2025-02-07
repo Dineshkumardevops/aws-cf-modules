@@ -1,64 +1,66 @@
 trigger:
-  branches:
-    include:
-      - main
+  - main  # Adjust based on your branch strategy
 
 variables:
-  AWS_REGION: "ap-southeast-2"
-  AWS_SERVICE_CONNECTION: "Your-AWS-Service-Connection-Name"
+  awsServiceConnection: "Your-AWS-Service-Connection-Name"
+  awsRegion: "ap-southeast-2"
+  s3BucketName: "ecs-resources"
 
 stages:
-  - stage: DeployInfrastructure
-    displayName: "Deploy AWS Infrastructure"
+  - stage: Prepare_S3_Bucket
+    displayName: "Create S3 Bucket and Upload Files"
     jobs:
-      - job: DeployAWSResources
-        displayName: "Deploy VPC, NACL, Route Table, and Subnet"
+      - job: CreateAndUpload
+        displayName: "Create S3 Bucket and Upload YAML Files"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: AWSCLI@1
+            displayName: "Create S3 Bucket if Not Exists"
+            inputs:
+              awsCredentials: "$(awsServiceConnection)"
+              regionName: "$(awsRegion)"
+              command: "s3"
+              arguments: "mb s3://$(s3BucketName) --region $(awsRegion)"
+              failOnStandardError: false
+              ignoreExitCode: true  # Allows pipeline to continue if bucket already exists
+
+          - task: AWSS3Upload@1
+            displayName: "Upload YAML files to S3"
+            inputs:
+              awsCredentials: "$(awsServiceConnection)"
+              regionName: "$(awsRegion)"
+              bucketName: "$(s3BucketName)"
+              sourceFolder: "$(Build.SourcesDirectory)"
+              globExpressions: |
+                vpc/vpc.yaml
+                route-table/route-table.yaml
+                nacl/nacl.yaml
+                subnet/subnet.yaml
+              targetFolder: "/"
+              flattenFolders: true
+
+  - stage: Deploy_StackSet
+    displayName: "Deploy CloudFormation StackSet"
+    dependsOn: Prepare_S3_Bucket
+    jobs:
+      - job: Deploy
+        displayName: "Deploy CloudFormation StackSet"
         pool:
           vmImage: "ubuntu-latest"
         steps:
           - task: AWSCloudFormationCreateOrUpdateStackSet@1
-            displayName: "Create VPC StackSet"
+            displayName: "Create CloudFormation StackSet"
             inputs:
-              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
-              regionName: "$(AWS_REGION)"
-              stackSetName: "VPCStackSet"
-              templateFile: "vpc.yaml"
+              awsCredentials: "$(awsServiceConnection)"
+              regionName: "$(awsRegion)"
+              stackSetName: "NetworkStackSet"
+              templateFile: "$(Build.SourcesDirectory)/stackset.yaml"
               capabilities: "CAPABILITY_NAMED_IAM"
               parameters: |
-                VpcCidr=10.0.0.0/16
-
-          - task: AWSCloudFormationCreateOrUpdateStackSet@1
-            displayName: "Deploy NACL StackSet"
-            inputs:
-              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
-              regionName: "$(AWS_REGION)"
-              stackSetName: "NACLStackSet"
-              templateFile: "nacl.yaml"
-              capabilities: "CAPABILITY_NAMED_IAM"
-              parameters: |
-                VpcId=VPCStackSet.VPCId
-
-          - task: AWSCloudFormationCreateOrUpdateStackSet@1
-            displayName: "Deploy Route Table StackSet"
-            inputs:
-              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
-              regionName: "$(AWS_REGION)"
-              stackSetName: "RouteTableStackSet"
-              templateFile: "route-table.yaml"
-              capabilities: "CAPABILITY_NAMED_IAM"
-              parameters: |
-                VpcId=VPCStackSet.VPCId
-                InternetGatewayId=VPCStackSet.InternetGatewayId
-
-          - task: AWSCloudFormationCreateOrUpdateStackSet@1
-            displayName: "Deploy Subnet StackSet"
-            inputs:
-              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
-              regionName: "$(AWS_REGION)"
-              stackSetName: "SubnetStackSet"
-              templateFile: "subnet.yaml"
-              capabilities: "CAPABILITY_NAMED_IAM"
-              parameters: |
-                PublicSubnetCidr=10.0.1.0/24
-                PrivateSubnetCidr=10.0.2.0/24
-                AvailabilityZone=ap-southeast-2a
+                StackSetAdminRole="arn:aws:iam::111122223333:role/AWSCloudFormationStackSetAdministrationRole"
+                ExecutionRole="arn:aws:iam::111122223333:role/AWSCloudFormationStackSetExecutionRole"
+                VpcCidr="10.0.0.0/16"
+                PublicSubnetCidr="10.0.1.0/24"
+                PrivateSubnetCidr="10.0.2.0/24"
+                AvailabilityZone="ap-southeast-2a"
