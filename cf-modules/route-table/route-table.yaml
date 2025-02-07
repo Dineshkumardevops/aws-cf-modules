@@ -1,49 +1,42 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: AWS CloudFormation Template to create Route Tables for a VPC
+Description: AWS CloudFormation Template to create a Route Table and associate it with a VPC
 
 Parameters:
   VpcId:
     Type: String
-    Description: The ID of the VPC where the Route Tables will be created
+    Description: The ID of the VPC where the Route Table will be created
 
   InternetGatewayId:
     Type: String
-    Description: The ID of the Internet Gateway for the public route
+    Description: The ID of the Internet Gateway to associate with the Route Table
 
 Resources:
+  # Create a Public Route Table
   PublicRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId: !Ref VpcId
       Tags:
         - Key: Name
-          Value: PublicRouteTable
+          Value: !Sub "${AWS::StackName}-PublicRouteTable"
+    DeletionPolicy: Retain  
 
-  DefaultRoute:
-    Type: "AWS::EC2::Route"
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      DestinationCidrBlock: "0.0.0.0/0"
-      GatewayId: !Ref InternetGatewayId
-
+  # Create a Private Route Table
   PrivateRouteTable:
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId: !Ref VpcId
       Tags:
         - Key: Name
-          Value: PrivateRouteTable
+          Value: !Sub "${AWS::StackName}-PrivateRouteTable"
+    DeletionPolicy: Retain  
 
-Outputs:
-  PublicRouteTableId:
-    Description: The ID of the public route table
-    Value: !Ref PublicRouteTable
-    Export:
-      Name: !Sub "${AWS::StackName}-PublicRouteTableId"
-
-  PrivateRouteTableId:
-    Description: The ID of the private route table
-    Value: !Ref PrivateRouteTable
-    Export:
-      Name: !Sub "${AWS::StackName}-PrivateRouteTableId"
-
+  # Create a Default Route in the Public Route Table (for internet access)
+  DefaultRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PublicRouteTable  
+      DestinationCidrBlock: "0.0.0.0/0"   
+      GatewayId: !Ref InternetGatewayId   
+    DependsOn: PublicRouteTable  
+    DeletionPolicy: Retain  
