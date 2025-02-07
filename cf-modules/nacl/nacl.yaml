@@ -39,3 +39,5 @@ Outputs:
   NetworkACLId:
     Description: The ID of the created Network ACL
     Value: !Ref NetworkACL
+    Export:
+      Name: !Sub "${AWS::StackName}-NetworkACLId"

@@ -59,6 +59,8 @@ Outputs:
   VPCId:
     Description: The VPC Id
     Value: !Ref VPC
+     Export:
+      Name: !Sub "${AWS::StackName}-VPCId"
 
   InternetGatewayId:
     Description: The Internet Gateway Id

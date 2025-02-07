@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation Template to create Public and Private Subnets for a VPC
+
+Parameters:
+  PublicSubnetCidr:
+    Type: String
+    Description: The CIDR block for the public subnet
+
+  PrivateSubnetCidr:
+    Type: String
+    Description: The CIDR block for the private subnet
+
+  AvailabilityZone:
+    Type: String
+    Description: The Availability Zone for the subnets
+
+Resources:
+  PublicSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !ImportValue VPCStack-VPCId
+      CidrBlock: !Ref PublicSubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet
+
+  PrivateSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !ImportValue VPCStack-VPCId
+      CidrBlock: !Ref PrivateSubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet
+
+  PublicSubnetRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !ImportValue RouteTableStack-PublicRouteTableId
+
+  PrivateSubnetRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !ImportValue RouteTableStack-PrivateRouteTableId
+
+  PublicSubnetNetworkAclAssociation:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      NetworkAclId: !ImportValue NACLStack-NetworkACLId
+
+  PrivateSubnetNetworkAclAssociation:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      NetworkAclId: !ImportValue NACLStack-NetworkACLId
