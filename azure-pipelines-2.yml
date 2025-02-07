@@ -1,0 +1,26 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  AWS_REGION: "ap-southeast-2"
+  AWS_SERVICE_CONNECTION: "Your-AWS-Service-Connection-Name"
+
+stages:
+  - stage: DeployInfrastructure
+    displayName: "Deploy AWS Infrastructure"
+    jobs:
+      - job: DeployStackSet
+        displayName: "Deploy Full StackSet"
+        pool:
+          vmImage: "ubuntu-latest"
+        steps:
+          - task: AWSCloudFormationCreateOrUpdateStackSet@1
+            displayName: "Deploy Full StackSet"
+            inputs:
+              awsCredentials: "$(AWS_SERVICE_CONNECTION)"
+              regionName: "$(AWS_REGION)"
+              stackSetName: "FullInfraStackSet"
+              templateFile: "stackset.yaml"
+              capabilities: "CAPABILITY_NAMED_IAM"
