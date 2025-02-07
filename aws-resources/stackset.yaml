@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: AWS CloudFormation StackSet to deploy VPC, Route Table, NACL, and Subnet stacks across multiple accounts and regions.
+Description: AWS CloudFormation StackSet to deploy ECS resources
 
 Parameters:
   StackSetAdminRole:
@@ -27,7 +27,7 @@ Parameters:
 
   AvailabilityZone:
     Type: String
-    Default: "us-east-1a"
+    Default: "ap-southeast-2a"
     Description: The Availability Zone for the subnets
 
 Resources:
