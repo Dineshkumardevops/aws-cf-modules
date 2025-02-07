@@ -68,12 +68,9 @@ Outputs:
   VPCId:
     Description: The VPC Id
     Value: !Ref VPC
-    Export:
-      Name: !Sub "${AWS::StackName}-VPCId"  # Export the VPCId for importing
-
+    
   # Output the Internet Gateway ID for reference in other stacks
   InternetGatewayId:
     Description: The Internet Gateway Id
     Value: !Ref InternetGateway
-    Export:
-      Name: !Sub "${AWS::StackName}-InternetGatewayId"  # Export the InternetGatewayId for importing
+    

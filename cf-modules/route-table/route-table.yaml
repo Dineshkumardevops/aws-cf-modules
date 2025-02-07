@@ -5,12 +5,10 @@ Parameters:
   VpcId:
     Type: String
     Description: The ID of the VPC where the Route Table will be created
-    Default: !ImportValue "VPCStack-VPCId"  # Replace <VpcStackName> with the actual stack name from vpc.yaml
 
   InternetGatewayId:
     Type: String
     Description: The ID of the Internet Gateway to associate with the Route Table
-    Default: !ImportValue "VPCStack-InternetGatewayId"  # Replace <VpcStackName> with the actual stack name from vpc.yaml
 
 Resources:
   # Create a Public Route Table
@@ -42,3 +40,17 @@ Resources:
       GatewayId: !Ref InternetGatewayId   
     DependsOn: PublicRouteTable  
     DeletionPolicy: Retain
+
+Outputs:
+  # Output the Route Table IDs for reference in other stacks
+  PublicRouteTableId:
+    Description: The Public Route Table Id
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicRouteTableId"
+
+  PrivateRouteTableId:
+    Description: The Private Route Table Id
+    Value: !Ref PrivateRouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateRouteTableId"
