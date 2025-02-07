@@ -1,0 +1,85 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation StackSet to deploy VPC, Route Table, NACL, and Subnet stacks across multiple accounts and regions.
+
+Parameters:
+  StackSetAdminRole:
+    Type: String
+    Description: The IAM role ARN for StackSet Administration
+
+  ExecutionRole:
+    Type: String
+    Description: The IAM role ARN for StackSet Execution
+
+  VpcCidr:
+    Type: String
+    Default: "10.0.0.0/16"
+    Description: The CIDR block for the VPC
+
+  PublicSubnetCidr:
+    Type: String
+    Default: "10.0.1.0/24"
+    Description: The CIDR block for the public subnet
+
+  PrivateSubnetCidr:
+    Type: String
+    Default: "10.0.2.0/24"
+    Description: The CIDR block for the private subnet
+
+  AvailabilityZone:
+    Type: String
+    Default: "us-east-1a"
+    Description: The Availability Zone for the subnets
+
+Resources:
+  # Stack to create the VPC and Internet Gateway
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: "https://s3.amazonaws.com/ecs-resources/vpc.yaml"
+      Parameters:
+        VpcCidr: !Ref VpcCidr
+      Tags:
+        - Key: Name
+          Value: VPCStack
+
+  # Stack to create the Route Tables
+  RouteTableStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPCStack
+    Properties:
+      TemplateURL: "https://s3.amazonaws.com/ecs-resources/route-table.yaml"
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VPCId
+        InternetGatewayId: !GetAtt VPCStack.Outputs.InternetGatewayId
+      Tags:
+        - Key: Name
+          Value: RouteTableStack
+
+  # Stack to create the Network ACL
+  NACLStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: VPCStack
+    Properties:
+      TemplateURL: "https://s3.amazonaws.com/ecs-resources/nacl.yaml"
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VPCId
+      Tags:
+        - Key: Name
+          Value: NACLStack
+
+  # Stack to create the Public & Private Subnets
+  SubnetStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - VPCStack
+      - RouteTableStack
+      - NACLStack
+    Properties:
+      TemplateURL: "https://s3.amazonaws.com/ecs-resources/subnet.yaml"
+      Parameters:
+        PublicSubnetCidr: !Ref PublicSubnetCidr
+        PrivateSubnetCidr: !Ref PrivateSubnetCidr
+        AvailabilityZone: !Ref AvailabilityZone
+      Tags:
+        - Key: Name
+          Value: SubnetStack
