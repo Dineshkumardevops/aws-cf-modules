@@ -5,6 +5,7 @@ Parameters:
   VpcCidr:
     Type: String
     Description: The CIDR block for the VPC
+    Default: "10.0.0.0/16"  # ✅ Set a default CIDR block to prevent errors
 
   EnableDnsSupport:
     Type: String
@@ -27,19 +28,19 @@ Parameters:
   VpcTags:
     Type: List<String>
     Description: The tags to apply to the VPC
-    Default: ""  
+    Default: ""
 
   InternetGatewayTags:
     Type: List<String>
     Description: The tags to apply to the Internet Gateway
-    Default: ""  
+    Default: ""
 
 Resources:
   # Create the VPC
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
-      CidrBlock: !Ref VpcCidr
+      CidrBlock: !Ref VpcCidr  # ✅ Will now always have a valid value
       EnableDnsSupport: !Ref EnableDnsSupport
       EnableDnsHostnames: !Ref EnableDnsHostnames
       InstanceTenancy: !Ref InstanceTenancy
