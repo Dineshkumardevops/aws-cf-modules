@@ -33,10 +33,11 @@ stages:
               bucketName: "$(s3BucketName)"
               sourceFolder: "$(Build.SourcesDirectory)"
               globExpressions: |
-                vpc/vpc.yaml
-                route-table/route-table.yaml
-                nacl/nacl.yaml
-                subnet/subnet.yaml
+                vpc/vpc.yaml=>cf-template/vpc.yaml
+                route-table/route-table.yaml=>cf-template/route-table.yaml
+                nacl/nacl.yaml=>cf-template/nacl.yaml
+                subnet/subnet.yaml=>cf-template/subnet.yaml
+                stackset.yaml=>aws-resources/stackset.yaml
               targetFolder: "/"
               flattenFolders: true
 
@@ -54,7 +55,7 @@ stages:
             inputs:
               awsCredentials: "$(awsServiceConnection)"
               regionName: "$(awsRegion)"
-              stackSetName: "NetworkStackSet"
+              stackName: "NetworkStackSet"
               templateFile: "$(Build.SourcesDirectory)/stackset.yaml"
               capabilities: "CAPABILITY_NAMED_IAM"
               parameters: |
