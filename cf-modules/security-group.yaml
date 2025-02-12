@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation Template to create Security Groups for ECS
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: The ID of the VPC where the Security Groups will be created
+    
+  PublicAccessCidr:
+    Type: String
+    Default: "0.0.0.0/0"
+    Description: CIDR block for public access. Change this for more security.
+
+Resources:
+  PublicSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Allow public access for ECS tasks"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref PublicAccessCidr
+        - IpProtocol: "tcp"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref PublicAccessCidr
+        - IpProtocol: "tcp"
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref PublicAccessCidr  # Optional for SSH access, restrict this in production
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: PublicSecurityGroup
+
+  PrivateSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupDescription: "Allow internal communication for ECS tasks"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref PublicSecurityGroup
+        - IpProtocol: "tcp"
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref PublicSecurityGroup
+        - IpProtocol: "tcp"
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !Ref PrivateSecurityGroup  # Allow internal communication
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: PrivateSecurityGroup
+
+Outputs:
+  PublicSecurityGroupId:
+    Description: The ID of the Public Security Group
+    Value: !Ref PublicSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSecurityGroupId"
+      
+  PrivateSecurityGroupId:
+    Description: The ID of the Private Security Group
+    Value: !Ref PrivateSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSecurityGroupId"

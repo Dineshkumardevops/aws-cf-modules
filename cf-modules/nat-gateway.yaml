@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AWS CloudFormation Template to create a NAT Gateway
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: The ID of the VPC where the NAT Gateway will be created
+
+  PublicSubnetId:
+    Type: String
+    Description: The ID of the Public Subnet where the NAT Gateway will be deployed
+
+  PrivateRouteTableId:
+    Type: String
+    Description: The ID of the Private Route Table to update for NAT Gateway
+
+Resources:
+  # Allocate Elastic IP for NAT Gateway
+  NatEIP:
+    Type: "AWS::EC2::EIP"
+    Properties:
+      Domain: vpc
+
+  # Create the NAT Gateway
+  NatGateway:
+    Type: "AWS::EC2::NatGateway"
+    Properties:
+      AllocationId: !GetAtt NatEIP.AllocationId
+      SubnetId: !Ref PublicSubnetId
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-NATGateway"
+
+  # Update Private Route Table to use NAT Gateway
+  PrivateRoute:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableId
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGateway
+
+Outputs:
+  NatGatewayId:
+    Description: The ID of the created NAT Gateway
+    Value: !Ref NatGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-NatGatewayId"
