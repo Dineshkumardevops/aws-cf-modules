@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: AWS CloudFormation StackSet to deploy ECS resources
+Description: AWS CloudFormation StackSet to deploy ECS resources with Networking
 
 Parameters:
   StackSetAdminRole:
@@ -29,6 +29,11 @@ Parameters:
     Type: String
     Default: "ap-southeast-2a"
     Description: The Availability Zone for the subnets
+
+  PublicAccessCidr:
+    Type: String
+    Default: "0.0.0.0/0"
+    Description: CIDR block for public access. Change for more security.
 
 Resources:
   # Stack to create the VPC and Internet Gateway
@@ -83,3 +88,51 @@ Resources:
       Tags:
         - Key: Name
           Value: SubnetStack
+
+  # Stack to create Security Groups
+  SecurityGroupStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: SubnetStack
+    Properties:
+      TemplateURL: "https://s3.amazonaws.com/ecs-resources/security-groups.yaml"
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VPCId
+        PublicAccessCidr: !Ref PublicAccessCidr
+      Tags:
+        - Key: Name
+          Value: SecurityGroupStack
+
+  # Stack to create NAT Gateway and Update Private Route Table
+  NATGatewayStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn:
+      - SubnetStack
+      - RouteTableStack
+    Properties:
+      TemplateURL: "https://s3.amazonaws.com/ecs-resources/nat-gateway.yaml"
+      Parameters:
+        VpcId: !GetAtt VPCStack.Outputs.VPCId
+        PublicSubnetId: !ImportValue SubnetStack-PublicSubnetId
+        PrivateRouteTableId: !ImportValue RouteTableStack-PrivateRouteTableId
+      Tags:
+        - Key: Name
+          Value: NATGatewayStack
+
+Outputs:
+  PublicSecurityGroupId:
+    Description: Public Security Group ID
+    Value: !ImportValue SecurityGroupStack-PublicSecurityGroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSecurityGroupId"
+      
+  PrivateSecurityGroupId:
+    Description: Private Security Group ID
+    Value: !ImportValue SecurityGroupStack-PrivateSecurityGroupId
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateSecurityGroupId"
+
+  NatGatewayId:
+    Description: NAT Gateway ID
+    Value: !ImportValue NATGatewayStack-NatGatewayId
+    Export:
+      Name: !Sub "${AWS::StackName}-NatGatewayId"
