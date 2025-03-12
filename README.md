@@ -46,3 +46,10 @@ Agenda:
 RDS deployment review
 API authentication validation
 CloudFormation vs. CDK decision progress
+
+Backup & Restore Process:
+Backups will not be automated; instead, they will be manually uploaded to S3.
+Restore steps must be clearly defined, as a manual restore might be required.
+IAM roles and permissions for backup and restore must be reviewed.
+Database connection strings need to be correctly configured in the environment.
+Alternative: A manual database setup is possible for development/testing.
