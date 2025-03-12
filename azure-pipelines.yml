@@ -59,8 +59,6 @@ stages:
               templateFile: "$(Build.SourcesDirectory)/stackset.yaml"
               capabilities: "CAPABILITY_NAMED_IAM"
               parameters: |
-                StackSetAdminRole="arn:aws:iam::111122223333:role/AWSCloudFormationStackSetAdministrationRole"
-                ExecutionRole="arn:aws:iam::111122223333:role/AWSCloudFormationStackSetExecutionRole"
                 VpcCidr="10.0.0.0/16"
                 PublicSubnetCidr="10.0.1.0/24"
                 PrivateSubnetCidr="10.0.2.0/24"
